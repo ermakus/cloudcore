@@ -53,7 +53,8 @@ class ProxyIncomingProtocol(Protocol):
                 host, port = data.split(':')
                 port = int(port)
                 self.completedHandshake = True
-            except:
+            except Exception, ex:
+		print "HANDSHAKE ERROR %s" % ex
                 self.logger.error("failed to connect on handshake")
                 self.transport.write("0" + str(ERRORS['InvalidHandshake']))
                 self.transport.loseConnection()

@@ -12,17 +12,9 @@ class ActionsTestCase(unittest.TestCase):
         Bunch.disconnect()
 
     def test_parse(self):
-        cmd = Bunch.parse( TEST_PATH, "!cd /tmp")
+        cmd = Bunch.parse( TEST_PATH, GHOST, "cd /tmp")
         self.assertEquals( cmd.path, TEST_PATH )
         self.assertEquals( cmd.kind, "cd" )
         self.assertEquals( cmd.bunch, "/tmp" )
         self.assertEquals( cmd.children()[0].path, "/tmp" )
-
-    def test_ls(self):
-        test = Bunch.resolve( TEST_PATH + "/test" )
-        Bunch.resolve( TEST_PATH + "/test/1" )
-        ls = Bunch.parse( TEST_PATH + "/ls", "!ls " + TEST_PATH + "/test" )
-        res = test.execute( ls )
-        self.assertEquals( len( res.children() ), 1 )
-
 

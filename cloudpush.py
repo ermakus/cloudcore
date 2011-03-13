@@ -153,6 +153,17 @@ class BunchFactory(Factory):
 
 class BunchResource(resource.Resource):
 
+    def getChild(self, path, request):
+
+        if path != "tcp": return BunchResourceLeaf()
+
+        path0 = request.prepath.pop(0)
+        request.postpath.insert(0, path0)
+        return self
+
+
+class BunchResourceLeaf(resource.Resource):
+
     isLeaf = True
 
     def render_GET(self, request):

@@ -5,6 +5,7 @@
         // Plugin that handle connetion
         jQuery.fn.bunch = function(path) {
 
+            	var server = "localhost";
             	var comet_port = 9999;
             	var client = new STOMPClient();
 		var node = this;
@@ -95,7 +96,7 @@
 	}
 
         $( function() {
-		var root = $("#pwd").bunch("/");
+		var root = $("#pwd").bunch("/sys");
 		$('#shell').bind('keypress', function(event) {
 			if ((event.keyCode || event.which) == 13) { 
                               	var cmd = $(this).val();

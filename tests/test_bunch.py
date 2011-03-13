@@ -1,4 +1,4 @@
-from bunch import Bunch, GHOST, TEMPLATES, SEPARATOR, ROOT_DIR
+from bunch import Bunch, GHOST, TEMPLATES, SEPARATOR, ROOT_DIR, _
 import unittest, os
 from json import loads
 
@@ -114,4 +114,19 @@ class BunchTestCase(unittest.TestCase):
         template.bunch = "{{ bunch.kind }}"
         template.save("file")
         self.assertEquals( test.render(), test.kind )
-        template.delete()        
+        template.delete()
+
+
+    def test_ls(self):
+        empty = _( TEST_PATH + "/empty", "test", "Content" )
+        self.assertEquals( empty.ls(), empty.name() + ".test: Content" ) 
+
+    def test_execute(self):
+        empty = _( TEST_PATH + "/empty" )
+        ls = _( "ls %s" % empty.path )
+        self.assertEquals( ls.kind, "ls" )
+        self.assertEquals( ls.bunch, empty.path )
+
+        res = ls.execute()
+        self.assertEquals( res.bunch, empty.ls() )
+ 

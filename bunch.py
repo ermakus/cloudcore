@@ -10,23 +10,24 @@ ROOT      = SEPARATOR = '/'
 ROOT_SYS  = ROOT + 'sys' + SEPARATOR
 TEMPLATES = ROOT_SYS + 'templates' + SEPARATOR
 LINKS     = ROOT_SYS + 'links' + SEPARATOR
+MEDIA     = ROOT_SYS + 'media' + SEPARATOR
+COMET     = "http://localhost:9999"
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'root'))
 
 
-""" Bunch! The Father Of All Objects """
+""" Bunch! The Mega Object """
 
 
 class Bunch:
 
     def __init__(self,path="/tmp",kind=GHOST,bunch=None):
-        if SEPARATOR != path[0]: raise Exception("Invalid path: " + path)
         self.path = path
         self.kind = kind
         self.bunch = bunch
 
     def __unicode__(self):
-        return self.fname()
+        return self.name()
 
     def __str__(self):
         return self.__unicode__()
@@ -40,11 +41,19 @@ class Bunch:
     def fname(self):
         return ROOT_DIR + self.path + "." + self.kind
 
-    def dump(self, ident=0):
+    def ls(self, ident=0, hist=None):
+
+        hist = hist or []
         offset = ''.join('    ' for i in xrange( ident ) )
-        print offset + self.__str__()
+        offset += "%s.%s: %s" % ( self.name(), self.kind, self.bunch )
+
+        if self.path in hist: 
+            return offset + ("[circular reference]")
+        hist += [self.path]
+
         for bunch in self.children():
-            bunch.dump(ident+1)
+            offset += ('\r\n' + bunch.ls(ident+1,hist))
+        return offset
  
     def save(self,storage="default"):
         self.db[ self.path ] = self.bunch
@@ -126,7 +135,7 @@ class Bunch:
             return temp.bunch
 
         env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
-        return env.get_template( self.kind ).render( bunch=self, depth=depth-1, MEDIA_URL='/sys/media/' )
+        return env.get_template( self.kind ).render( bunch=self, depth=depth-1, MEDIA=MEDIA, COMET=COMET )
 
     def execute(self,target=None, avatar=None):
 
@@ -134,7 +143,7 @@ class Bunch:
             target = self
 
         cmd1 = self.kind + "_" + target.kind
-        cmd2 = "ANY_" + target.kind
+        cmd2 = "ANY_" + self.kind
 
         import actions
 
@@ -144,14 +153,14 @@ class Bunch:
             try:
                 return getattr(actions,cmd2)(self, target, avatar)
             except AttributeError:
-                return None
+                return Bunch( ROOT_SYS + "/error", "error", "No handler for %s" % self.kind )
 
     """ Class methods """
  
     @classmethod
-    def connect(self,system):
+    def connect(self,system="default"):
         self.system = system
-        self.db = get_redis(system )
+        self.db = get_redis(system)
 
     @classmethod
     def disconnect(self):
@@ -162,9 +171,15 @@ class Bunch:
     @classmethod
     def resolve(self, path, kind=GHOST,bnc=None):
 
+        # If not a path, try to parse as command and put in history
+        if SEPARATOR != path[0]: 
+	    return self.parse( path=self.uniq( ROOT_SYS + "/commands" ).path ,kind=kind, cmd=path )
+
+        # Root is hardcoded here
         if path == SEPARATOR: 
             return Bunch( SEPARATOR, "root", "The Root")
 
+        # Check in redis or load from file
         if self.db.exists( path ):
             bunch = Bunch(path, self.db[ path + "?kind" ], self.db[ path ])
             try:
@@ -175,6 +190,7 @@ class Bunch:
                 pass
 
         else:
+	    # Create new 'Ghost' object
             bunch = Bunch(path, kind, bnc)
             p = bunch.parent()
             if p: p.attach( bunch )
@@ -198,16 +214,14 @@ class Bunch:
         return Bunch( src["path"], src["kind"], src["bunch"] )
 
     @classmethod
-    def parse(self, path, cmd):
+    def parse(self, path, kind=GHOST, cmd="nop"):
         parts = cmd.strip().split()
-        if parts[0][0] == '!':
-            cmd = parts[0][1:]
-            bunch = Bunch(path,cmd,' '.join(parts[1:]))
-            for p in parts[1:]:
-                if p[0] == SEPARATOR:
-                    bunch.attach( Bunch.resolve( p ) )
-        else:
-            bunch = Bunch(path,"text",cmd)
- 
+        cmd = parts[0]
+        bunch = Bunch(path,cmd,' '.join(parts[1:]))
+        for p in parts[1:]:
+            if p[0] == SEPARATOR:
+                bunch.attach( Bunch.resolve( p ) )
         bunch.save()
         return bunch
+
+_ = Bunch.resolve
