@@ -108,13 +108,14 @@ class BunchTestCase(unittest.TestCase):
         self.assertFalse( os.path.exists( test.fname() ) )
         
     def test_render(self):
+	Bunch.resolve( TEMPLATES + "test").delete("file")
         test = Bunch.resolve( TEST_PATH + "/html", "test", "Test" )
         self.assertEquals( test.render(), test.bunch )
 	template = Bunch.resolve( TEMPLATES + "test")
         template.bunch = "{{ bunch.kind }}"
         template.save("file")
         self.assertEquals( test.render(), test.kind )
-        template.delete()
+        template.delete("file")
 
 
     def test_ls(self):

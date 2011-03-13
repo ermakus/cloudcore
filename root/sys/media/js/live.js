@@ -52,7 +52,7 @@
 
     		client.onconnectedframe = function() {
         		client.subscribe( path );
-			node.send( "!ls " + path );
+			node.send( "render " + path );
     		};
 
     		client.onmessageframe = function(frame) { //check frame.headers.destination?
@@ -74,10 +74,9 @@
 		connect();
 
 		node.bind('click', function() {
-			node.send("!ls " + path );
-		}  );
+		});
 
-		node.html('<root id="' + id + '"/>');
+		node.html('<div id="' + id + '"/>');
 		return node;
 	}; 
 

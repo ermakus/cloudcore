@@ -1,4 +1,4 @@
-from bunch import Bunch, GHOST
+from bunch import Bunch, _, GHOST
 import unittest
 
 TEST_PATH="/tmp/unit-test"
@@ -18,3 +18,7 @@ class ActionsTestCase(unittest.TestCase):
         self.assertEquals( cmd.bunch, "/tmp" )
         self.assertEquals( cmd.children()[0].path, "/tmp" )
 
+    def test_render(self):
+        cmd = _( "render " + TEST_PATH )
+        self.assertEquals( cmd.execute(), _( TEST_PATH ).render() )
+        

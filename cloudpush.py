@@ -1,7 +1,7 @@
 from datetime import datetime
 from messagequeue import QueueError, MessageQueueManager
 from twisted.internet.protocol import Factory, Protocol
-from bunch import Bunch, GHOST, SEPARATOR
+from bunch import Bunch, _, GHOST, SEPARATOR
 from twisted.web import server, resource
 import traceback
 import stomper
@@ -97,11 +97,7 @@ class BunchProtocol(Protocol):
         try:
 	    print "EXECUTE: (%s) %s" % ( self.avatar, body )
 
-            bullet = Bunch.parse( "/bullet", body )
-
-            body = Bunch.resolve( "/" ).execute( bullet )
-
-	    if isinstance( body, Bunch ): body = str(body.render())
+            body = _( body ).execute()
  
             result = self.factory.mqm.send_message(self, headers['destination'], (headers, body))
         except QueueError, err:

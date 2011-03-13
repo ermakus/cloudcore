@@ -42,7 +42,8 @@ class Bunch:
     def fname(self):
         return ROOT_DIR + self.path + "." + self.kind
 
-    def ls(self, ident=0, hist=None):
+    def ls(self, level=1, ident=0, hist=None):
+
 
         hist = hist or []
         offset = ''.join('    ' for i in xrange( ident ) )
@@ -52,10 +53,12 @@ class Bunch:
 
         hist += [self.path]
 
-        offset += str(self)
+        offset += str(self) 
 
-        for bunch in self.children():
-            offset += ('\r\n' + bunch.ls(ident+1,hist))
+        if level > 0:
+            for x in self.children():
+                offset += ('\r\n' + x.ls(level-1,ident+1,hist))
+
         return offset
  
     def save(self,storage="default"):
@@ -90,7 +93,10 @@ class Bunch:
         self.db.delete( LINKS + self.path )
 
         if storage == "file":
-            os.remove( self.fname() )
+            try:
+                os.remove( self.fname() )
+            except OSError:
+                pass
 
     def level(self):
         me = self.parent()
@@ -137,8 +143,12 @@ class Bunch:
             temp = Bunch.resolve( TEMPLATES + kind, "template", "{% autoescape false %}{{ bunch.bunch }}{% endautoescape %}" )
             return temp.bunch
 
-        env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
-        return env.get_template( self.kind ).render( bunch=self, depth=depth-1, MEDIA=MEDIA, COMET=COMET )
+        result = ""
+        if depth > 0:  
+            env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
+            result = env.get_template( self.kind ).render( bunch=self, depth=depth-1, MEDIA=MEDIA, COMET=COMET )
+
+        return str(result)
 
     def execute(self,target=None, avatar=None):
 
@@ -176,7 +186,7 @@ class Bunch:
 
         # If not a path, try to parse as command and put in history
         if SEPARATOR != path[0]: 
-	    return self.parse( path=self.uniq( ROOT_SYS + "/commands" ).path ,kind=kind, cmd=path )
+	    return self.parse( path=self.uniq( ROOT_SYS + "log" ).path ,kind=kind, cmd=path )
 
         # Root is hardcoded here
         if path == SEPARATOR: 
@@ -185,19 +195,19 @@ class Bunch:
         # Check in redis or load from file
         if self.db.exists( path ):
             bunch = Bunch(path, self.db[ path + "?kind" ], self.db[ path ])
-            try:
-                fp = open( bunch.fname(), "r" )
-	        bunch.bunch = fp.read()
-                fp.close()
-            except IOError:
-                pass
-
         else:
 	    # Create new 'Ghost' object
             bunch = Bunch(path, kind, bnc)
             p = bunch.parent()
             if p: p.attach( bunch )
             bunch.save()
+
+        try:
+            fp = open( bunch.fname(), "r" )
+	    bunch.bunch = fp.read()
+            fp.close()
+        except IOError:
+            pass
  
         return bunch
 

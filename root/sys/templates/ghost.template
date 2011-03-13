@@ -1,4 +1,6 @@
 <div id="{{ bunch.xid() }}" style="background-color: #DDDDDD; padding: 1%;">
 <h1>{{ bunch.path }}</h1>
-{% autoescape false %}{% for child in bunch.children() %}{{ child.render() }}{% endfor %}{% endautoescape %}
+<ul>
+{% autoescape false %}{% for child in bunch.children() %}<li>{{ child.name() }}</li>{% endfor %}{% endautoescape %}
+</ul>
 </div>
