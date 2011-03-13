@@ -26,11 +26,12 @@ class Bunch:
         self.kind = kind
         self.bunch = bunch
 
-    def __unicode__(self):
-        return self.name()
-
     def __str__(self):
-        return self.__unicode__()
+        bunch = self.bunch
+        if bunch:
+           if len(bunch)>60: bunch = bunch[:60] + ".."
+           bunch = bunch.translate(None,'\r\n')
+        return "%s.%s: %s" % ( self.name(), self.kind, bunch)
 
     def xid(self):
         return self.path.replace(SEPARATOR,'_')
@@ -45,11 +46,13 @@ class Bunch:
 
         hist = hist or []
         offset = ''.join('    ' for i in xrange( ident ) )
-        offset += "%s.%s: %s" % ( self.name(), self.kind, self.bunch )
 
         if self.path in hist: 
-            return offset + ("[circular reference]")
+            return offset + "[DUP] " + str(self)
+
         hist += [self.path]
+
+        offset += str(self)
 
         for bunch in self.children():
             offset += ('\r\n' + bunch.ls(ident+1,hist))

@@ -8,4 +8,4 @@ cmd = ' '.join( sys.argv[1:])
 src = _( cmd )
 print '>>>>>>>>>>>>>>>>>>\r\n', cmd
 res = src.execute()
-print '<<<<<<<<<<<<<<<<<<\r\n', res.ls()
+print '<<<<<<<<<<<<<<<<<<\r\n', res
