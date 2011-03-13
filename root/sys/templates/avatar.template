@@ -1,0 +1,7 @@
+<div id="{{ bunch.xid() }}" class="{{ bunch.kind }}">
+<h1>This is Avatar of {{ bunch.bunch }}</h1>
+{% autoescape false %}{% for child in bunch.children() %}{{ child.render() }}{% endfor %}{% endautoescape %}
+</div>
+<script>
+alert("{{ bunch.bunch }} is here!");
+</script>
