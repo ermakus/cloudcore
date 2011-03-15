@@ -1,7 +1,7 @@
 from datetime import datetime
 from messagequeue import QueueError, MessageQueueManager
 from twisted.internet.protocol import Factory, Protocol
-from bunch import Bunch, _, GHOST, SEPARATOR
+from bunch import Bunch, _, GHOST, SEPARATOR, ROOT_SYS
 from twisted.web import server, resource
 import traceback
 import stomper
@@ -165,8 +165,13 @@ class BunchResourceLeaf(resource.Resource):
     def render_GET(self, request):
         Bunch.connect('default')
 	path, kind = os.path.splitext( request.path )
-	print "REQUEST:  ", request
-        bunch = Bunch.resolve( path, kind[1:] )
-	print "RESPONCE: ", bunch
+	print " >> ", request
+	if path == "" or path == SEPARATOR:
+            bunch = Bunch.resolve( ROOT_SYS + "media" + SEPARATOR + "index", "html", "No index file" )
+        else:
+            bunch = Bunch.resolve( path, kind[1:] )
+	print " << ", bunch
+        request.setHeader('Content-Type', bunch.mimetype() )
+        if bunch.is_binary(): return bunch.bunch
         return str( bunch.render(1) )
 

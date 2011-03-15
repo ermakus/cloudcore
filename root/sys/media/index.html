@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<title>X</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link rel="stylesheet" href="/sys/media/stylesheets/master.css" />
+<!--[if IE 8]>
+<link rel="stylesheet" href="/sys/media/stylesheets/ie8.css" />
+<![endif]-->
+<!--[if !IE]><!-->
+<script src="/sys/media/javascripts/iscroll.js"></script>
+<!--<![endif]-->
+<script src="/sys/media/javascripts/jquery.js"></script>
+<script src="/sys/media/javascripts/Orbited.js"></script>
+<script src="/sys/media/javascripts/stomp.js"></script>
+<script src="/sys/media/javascripts/live.js"></script>
+<script src="/sys/media/javascripts/master.js"></script>
+</head>
+<body>
+<div id="main" class="abs">
+	<div class="abs header_upper chrome_light">
+		<span class="float_left button" id="button_navigation">
+			Navigation
+		</span>
+		<a href="#" class="float_left button">
+			The Root
+		</a>
+		<a href="#" class="float_right button">
+			Sign out
+		</a>
+		<span id="status">...</span>
+	</div>
+	<div class="abs header_lower chrome_light">
+		<a href="#" class="icon icon_refresh"></a>
+		<a href="#" class="icon icon_redo"></a>
+		<a href="#" class="icon icon_loopback"></a>
+		<a href="#" class="icon icon_squiggle"></a>
+		<a href="#" class="icon icon_shuffle"></a>
+		<a href="#" class="icon icon_magnifying_glass"></a>
+		<a href="#" class="icon icon_map_marker"></a>
+		<a href="#" class="icon icon_chat"></a>
+		<a href="#" class="icon icon_chat2"></a>
+		<a href="#" class="icon icon_medical"></a>
+		<a href="#" class="icon icon_clock"></a>
+		<a href="#" class="icon icon_eye"></a>
+		<a href="#" class="icon icon_target"></a>
+		<a href="#" class="icon icon_tag"></a>
+		<a href="#" class="icon icon_tags"></a>
+	</div>
+	<div id="main_content" class="abs">
+		<div id="main_content_inner">
+		</div>
+	</div>
+	<div class="abs footer_lower chrome_light">
+		<a href="#" class="float_left button">
+			Undo
+		</a>
+		<a href="#" class="float_left button">
+			Redo
+		</a>
+		<a href="#" class="icon icon_bird float_right"></a>
+		<input type="search" id="fu" name="fu" style="margin-top: 10px; width: 80%;" placeholder="Cloud-Fu" />
+	</div>
+</div>
+<div id="sidebar" class="abs">
+	<span id="nav_arrow"></span>
+	<div class="abs header_upper chrome_light">
+		BunchFS
+	</div>
+	<form action="" class="abs header_lower chrome_light">
+		<input type="search" id="q" name="q" placeholder="Search..." />
+	</form>
+	<div id="sidebar_content" class="abs">
+		<div id="sidebar_content_inner">
+			<ul id="sidebar_menu">
+				<li id="sidebar_menu_home" class="active">
+					<a href="#"><span class="abs"></span>Home</a>
+				</li>
+				<li>
+					<a href="#">Link Without Sub-links</a>
+				</li>
+				<li>
+					<a href="#">Primary Link Title Here</a>
+					<ul>
+						<li>
+							<a href="#">Secondary Link Title Here</a>
+							<ul>
+								<li>
+									<a href="#">Tertiary Link Title Here</a>
+									<ul>
+										<li>
+											<a href="#">Quaternary Link Title Here</a>
+										</li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div class="abs footer_lower chrome_light">
+		<a href="#" class="icon icon_gear2 float_left"></a>
+		<span class="float_right gutter_right">This is virtual file system of entities</span>
+	</div>
+</div>
+</body>
+</html>

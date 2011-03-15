@@ -23,8 +23,7 @@
 		}
 	
 		function connect() {
-    			var cookie = $.cookie("sessionid");
-    			client.connect(server, comet_port, cookie, path);
+    			client.connect(server, comet_port, "foo", path);
 		}
 	
 		status("Connecting to: " + path );
@@ -95,8 +94,8 @@
 	}
 
         $( function() {
-		var root = $("#pwd").bunch("/sys");
-		$('#shell').bind('keypress', function(event) {
+		var root = $("#main_content_inner").bunch("/");
+		$('#fu').bind('keypress', function(event) {
 			if ((event.keyCode || event.which) == 13) { 
                               	var cmd = $(this).val();
 				root.send( cmd );

@@ -1,47 +1,6 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
-<head>
-        <script type="text/javascript"> if (window != top) { top.location.href = location.href;}</script>
-	<title>CloudPub Root Page</title>
-	<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-	<meta name="description" content="" />
-	<meta name="keywords" content="" />
-	<meta name="robots" content="index, follow" />
-	<!-- Styles -->
-        <link type="text/css" rel="stylesheet" href="{{ MEDIA }}css/jquery.fancybox-1.3.1.css"></script>
-	<!-- JQuery -->
-        <script type="text/javascript" src="{{ MEDIA }}js/jquery-1.4.2.min.js"></script>
-        <script type="text/javascript" src="{{ MEDIA }}js/jquery.fancybox-1.3.1.pack.js"></script>
-
-        <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/jquery-ui.js" type="text/javascript"></script>
-        <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
-
-	<script type="text/javascript">
-	  var server = "{{ COMET }}";
-        </script>
-
-        <script type="text/javascript" src="{{ MEDIA }}js/jquery.cookie.js"></script>
-        <script type="text/javascript" src="{{ MEDIA }}js/Orbited.js"></script>
-        <script type="text/javascript" src="{{ MEDIA }}js/stomp.js"></script>
-        <script type="text/javascript" src="{{ MEDIA }}js/common.js"></script>
-        <script type="text/javascript" src="{{ MEDIA }}js/live.js"></script>
-</head>
-<body>
-
-<div id="drawer">
-    <iframe id="drawer_iframe"></iframe>
-    <div class="drawer_button" id="drawer_off" style="display: none;"><img src="{{ MEDIA }}img/collapse.png" alt="collapse" /> <a href="#">Close</a></div>
+<div id="{{ bunch.xid() }}" style="background-color: #DDDDDD; padding: 1%;">
+<h1>{{ bunch.path }}</h1>
+<ul>
+{% autoescape false %}{% for child in bunch.children() %}<li>{{ child.name() }}</li>{% endfor %}{% endautoescape %}
+</ul>
 </div>
- 
-<div id="content" class="clear">
-  <div id="pwd"></div>
-</div>
-
-<input id="shell" style="width:98%; padding-top: 10px;" type="text">
-<div id="status"></div>
-
-<script type="text/javascript">
-
-</script>
-</body>
-</html>

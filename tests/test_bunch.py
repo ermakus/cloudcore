@@ -130,4 +130,11 @@ class BunchTestCase(unittest.TestCase):
 
         res = ls.execute()
         self.assertEquals( res, empty.ls() )
- 
+
+    def test_type(self):
+        txt = _( TEST_PATH + "/txt", "test", "<html>\t</html>\r\n" )
+        self.assertEquals( txt.mimetype(), "text/html" )
+        self.assertFalse( txt.is_binary() )
+        bin = _( TEST_PATH + "/bin", "test", "BIN\01\02\03\04" )
+        self.assertTrue( bin.is_binary() )
+

@@ -2,6 +2,7 @@ import redis
 from redis.wrap import *
 from simplejson import dumps, loads
 import random, string, os
+import magic, mimetypes
 
 from jinja2 import Environment, Template, FunctionLoader
 
@@ -14,6 +15,7 @@ MEDIA     = ROOT_SYS + 'media' + SEPARATOR
 COMET     = "http://localhost:9999"
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'root'))
+TEXT_CHARS = "".join(map(chr, range(32, 127)) + list("\n\r\t\b"))
 
 
 """ Bunch! The Mega Object """
@@ -25,12 +27,19 @@ class Bunch:
         self.path = path
         self.kind = kind
         self.bunch = bunch
+        self.mime = None
 
     def __str__(self):
+
         bunch = self.bunch
+
         if bunch:
-           if len(bunch)>60: bunch = bunch[:60] + ".."
-           bunch = bunch.translate(None,'\r\n')
+            if self.is_binary(): 
+                bunch = "[BINARY, %s]" % self.mimetype()
+            else:
+                if len(bunch)>60: bunch = bunch[:60] + ".."
+                bunch = bunch.translate(None,'\r\n')
+
         return "%s.%s: %s" % ( self.name(), self.kind, bunch)
 
     def xid(self):
@@ -167,6 +176,20 @@ class Bunch:
                 return getattr(actions,cmd2)(self, target, avatar)
             except AttributeError:
                 return Bunch( ROOT_SYS + "/error", "error", "No handler for %s" % self.kind )
+   
+    def mimetype(self):
+        if self.mime: return self.mime
+        self.mime, encoding = mimetypes.guess_type( self.name() + '.' + self.kind )
+        if not self.mime:
+            mime = magic.Magic(mime=True)
+            self.mime = mime.from_buffer( self.bunch )
+        return self.mime
+
+    def is_binary(self):
+        if 'text' in self.mimetype():
+            return False
+
+        return True
 
     """ Class methods """
  
