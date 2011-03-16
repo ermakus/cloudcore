@@ -10,11 +10,9 @@ import sys,os
 
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR='/var/log/cloudpub'
-DJANGO_ADMIN_MEDIA='/usr/local/lib/python2.6/dist-packages/django/contrib/admin/media'
 INTERFACE = "0.0.0.0"
 STATIC_PORT = 8000
-STOMP_PORT = 9999
-COMET_PORT = 8080
+STOMP_PORT  = 9999
 
 config.map["[access]"]={(INTERFACE, STOMP_PORT):"*",("localhost",STOMP_PORT):"*",("cloudpub.us",STOMP_PORT):"*"}
 sys.path.append( BASEDIR )
@@ -23,12 +21,8 @@ application = service.Application('cloudpub')
 serviceCollection = service.IServiceCollection(application)
 
 root = BunchResource()
-
 site = server.Site(root, logPath=LOG_DIR + "/server.log")
-
 internet.TCPServer(STATIC_PORT, site, interface=INTERFACE).setServiceParent(serviceCollection)
-
 internet.GenericServer(cometsession.Port, factory=proxy.ProxyFactory(), resource=root, childName="tcp", interface=INTERFACE).setServiceParent(serviceCollection)
-
 internet.TCPServer(STOMP_PORT, BunchFactory(), interface=INTERFACE).setServiceParent(serviceCollection)
 

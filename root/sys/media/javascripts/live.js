@@ -55,18 +55,24 @@
     		};
 
     		client.onmessageframe = function(frame) { //check frame.headers.destination?
-			var msg = $(frame.body);
-			var id = msg.attr('id');
-			if( !id ) {
-				$('#status').html( msg );
+			if( frame.body && frame.body[0] != '<' ) {
+				// Plain text
+				node.html("<pre>" + frame.body + "</pre>");
 				return;
 			}
+			var msg = $(frame.body);
+			var id = msg.attr('id');
 			var me = $('#'+id);
-			if( me.length ) {
-				me.replaceWith( msg ); 
-			} else {
+			if( msg.is('delete') ) me.remove();
+			else
+			if( me.length ) me.replaceWith( msg );
+			else 
+			{
 				var p = $( '#'+pid(id) );
-				if( p.length ) msg.appendTo( p  ); 
+				if( p.length ) 
+					msg.appendTo( p );
+				else
+					node.html( msg );
 			}
     		};
 

@@ -9,17 +9,30 @@ from jinja2 import Environment, Template, FunctionLoader
 GHOST     = 'ghost'
 ROOT      = SEPARATOR = '/'
 ROOT_SYS  = ROOT + 'sys' + SEPARATOR
+LINKS     = ROOT_SYS + 'links'
 TEMPLATES = ROOT_SYS + 'templates' + SEPARATOR
-LINKS     = ROOT_SYS + 'links' + SEPARATOR
 MEDIA     = ROOT_SYS + 'media' + SEPARATOR
-COMET     = "http://localhost:9999"
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'root'))
-TEXT_CHARS = "".join(map(chr, range(32, 127)) + list("\n\r\t\b"))
 
+""" Decorator: Limit recursuve call to 'level' and prevent circular refs """
+def recursive(f,none=""):
+    def wrapped(*args,**kwds):
+        _self = args[0]
+        if 'hist' in kwds:
+            if _self.path in kwds['hist']: 
+                return none
+        else:
+            kwds['hist'] = []
+        kwds['hist'] += [ _self.path ]
+        
+        if 'level' in kwds and kwds['level'] == 0:
+            return none
+        else:
+            return f(*args,**kwds)
+    return wrapped
 
-""" Bunch! The Mega Object """
-
+"""  Bunch! The Mega Object """
 
 class Bunch:
 
@@ -51,24 +64,10 @@ class Bunch:
     def fname(self):
         return ROOT_DIR + self.path + "." + self.kind
 
+    @recursive
     def ls(self, level=1, ident=0, hist=None):
-
-
-        hist = hist or []
-        offset = ''.join('    ' for i in xrange( ident ) )
-
-        if self.path in hist: 
-            return offset + "[DUP] " + str(self)
-
-        hist += [self.path]
-
-        offset += str(self) 
-
-        if level > 0:
-            for x in self.children():
-                offset += ('\r\n' + x.ls(level-1,ident+1,hist))
-
-        return offset
+        offset = ''.join('    ' for i in xrange( ident ) ) + str(self)
+        return offset + ''.join( '\n' + x.ls(level=level-1,ident=ident+1,hist=hist) for x in self.children()).rstrip('\n')
  
     def save(self,storage="default"):
         self.db[ self.path ] = self.bunch
@@ -85,11 +84,8 @@ class Bunch:
         p = self.parent()
         if p: p.save()
 
+    @recursive
     def delete(self, storage="default", hist=None):
-        hist = hist or []
-        if self.path in hist: 
-            return
-        hist += [self.path]
 
         for ch in self.children():
             ch.delete( hist=hist )
@@ -146,36 +142,27 @@ class Bunch:
 
         return dumps( encode_tree(self), default=encode_tree )
   
-    def render(self, depth=1):
-
+    @recursive
+    def render(self, level=1, hist=None, template=None):
+        if self.is_binary(): return str(self)
+        if template is None: template = self.kind
         def load(kind):
             temp = Bunch.resolve( TEMPLATES + kind, "template", "{% autoescape false %}{{ bunch.bunch }}{% endautoescape %}" )
             return temp.bunch
 
-        result = ""
-        if depth > 0:  
-            env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
-            result = env.get_template( self.kind ).render( bunch=self, depth=depth-1, MEDIA=MEDIA, COMET=COMET )
+        env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
+        result = env.get_template( template ).render( bunch=self, level=level-1, template=template )
 
         return str(result)
 
-    def execute(self,target=None, avatar=None):
-
-        if target is None:
-            target = self
-
-        cmd1 = self.kind + "_" + target.kind
-        cmd2 = "ANY_" + self.kind
+    def execute(self,avatar=None):
 
         import actions
 
         try:
-            return getattr(actions,cmd1)(self, target, avatar)
+            return getattr(actions,self.kind)(self, avatar)
         except AttributeError:
-            try:
-                return getattr(actions,cmd2)(self, target, avatar)
-            except AttributeError:
-                return Bunch( ROOT_SYS + "/error", "error", "No handler for %s" % self.kind )
+            return Bunch( ROOT_SYS + "/error/1", "error", "No handler for %s" % self.kind )
    
     def mimetype(self):
         if self.mime: return self.mime
