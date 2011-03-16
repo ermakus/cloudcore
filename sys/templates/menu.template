@@ -1,0 +1,4 @@
+<li id="{{ bunch.xid() }}" class="menu">
+<a href="#">{{ bunch.path }}</a>
+<ul>{% autoescape false %}{% for child in bunch.children() %}{{ child.render( template=template, level=level ) }}{% endfor %}{% endautoescape %}</ul>
+</li>

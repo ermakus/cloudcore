@@ -3,19 +3,24 @@ import unittest
 from tests import all_tests
 import getopt
 
-def get_level( cli ):
-    opt, val  = getopt.getopt(cli.split(), 'l:',['level='])
+def get_opts( cli ):
+    opt, val  = getopt.getopt(cli.split(), 'l:t:',['level=','template='])
     level = 2
+    template = None
     for o, a in opt:
         if o in ('-l','--level'): level = int(a)
-    return level
+        if o in ('-t','--template'): template = a
+    return {'level':level, 'template':template}
+
+def invalid( cmd, avatar ):
+    return Bunch( ROOT_SYS + "error/invalid","error",cmd.kind + " " + cmd.bunch)
  
 def render( render, avatar ):
-    template = None
-    return ''.join( x.render( level=get_level( render.bunch ), template=template ) for x in render.children() )
+    opt = get_opts( render.bunch )
+    return ''.join( x.render( level=opt['level'], template=opt['template'] ) for x in render.children() )
 
 def ls( ls, avatar ):
-    return ''.join( x.ls( get_level( ls.bunch ) ) for x in ls.children() )
+    return ''.join( x.ls( get_opts( ls.bunch )['level'] ) for x in ls.children() )
 
 def rm( rm, avatar ):
     child = rm.children()[0]

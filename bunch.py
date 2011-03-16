@@ -13,7 +13,7 @@ LINKS     = ROOT_SYS + 'links'
 TEMPLATES = ROOT_SYS + 'templates' + SEPARATOR
 MEDIA     = ROOT_SYS + 'media' + SEPARATOR
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'root'))
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 """ Decorator: Limit recursuve call to 'level' and prevent circular refs """
 def recursive(f,none=""):
@@ -144,7 +144,6 @@ class Bunch:
   
     @recursive
     def render(self, level=1, hist=None, template=None):
-        if self.is_binary(): return str(self)
         if template is None: template = self.kind
         def load(kind):
             temp = Bunch.resolve( TEMPLATES + kind, "template", "{% autoescape false %}{{ bunch.bunch }}{% endautoescape %}" )
@@ -162,7 +161,7 @@ class Bunch:
         try:
             return getattr(actions,self.kind)(self, avatar)
         except AttributeError:
-            return Bunch( ROOT_SYS + "/error/1", "error", "No handler for %s" % self.kind )
+            return getattr(actions,"invalid")(self, avatar)
    
     def mimetype(self):
         if self.mime: return self.mime
@@ -175,6 +174,9 @@ class Bunch:
     def is_binary(self):
         if 'text' in self.mimetype():
             return False
+        if 'javascript' in self.mimetype():
+            return False
+
 
         return True
 
@@ -190,6 +192,10 @@ class Bunch:
         if( self.db ):
             self.db.flushdb()
             self.db = None
+
+    @classmethod
+    def exists(self, path):
+        return self.db.exists( path )
 
     @classmethod
     def resolve(self, path, kind=GHOST,bnc=None):

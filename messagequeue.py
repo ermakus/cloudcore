@@ -25,21 +25,6 @@ class MessageQueueRoot(object):
     def empty(self):
         return not bool(self.subscribers)
 
-    def prep_headers(self, headers):
-        self.id += 1
-        id = self.name + '_' + str(self.id)
-        headers.update({'destination': self.name, 'message-id': id})
-        return headers
-
-    def prep_message(self, message):
-        #print "message to prep", message
-        if isinstance(message, tuple):
-            headers, body = message
-        else:
-            headers, body = {}, message
-        message = (self.prep_headers(headers), body)
-        return message
-
 
 class Queue(MessageQueueRoot):
     """
@@ -54,7 +39,7 @@ class Queue(MessageQueueRoot):
         MessageQueueRoot.subscribe(self, proto)
         while self.messages:
             message = self.messages.pop(0)
-            proto.send(self.prep_message(message))
+            proto.send(message)
             
     def send(self, message):
         """ Calls the send function for each attached protocol """
@@ -62,7 +47,7 @@ class Queue(MessageQueueRoot):
             self.messages.append(message)
         else:
             target = self.subscribers.pop(0)
-            target.send(self.prep_message(message))
+            target.send(message)
             self.subscribers.append(target)
     
     def empty(self):
@@ -73,7 +58,7 @@ class Topic(MessageQueueRoot):
     def send(self, message):
         """ Calls the send function for each attached protocol """
         for proto in self.subscribers:
-            proto.send(self.prep_message(message))
+            proto.send(message)
   
 
 class Pubsub(object):
@@ -141,8 +126,6 @@ class MessageQueueManager(object):
         #print "mqm - send - P, D, M", proto, dest_name, message
         self.create_queue(proto, dest_name)
         self.test_queue_rights(proto, dest_name, 'w')
-        if not isinstance(message, tuple):
-            message = ({}, message)
         self.message_queues[dest_name].send(message)
         
     def leave_queue(self, proto, dest_name):
@@ -151,8 +134,6 @@ class MessageQueueManager(object):
             
     def destroy_queue(self, proto, dest_name):
         self.create_queue(proto, dest_name)
-        #self.test_queue_rights(proto.get_groups(), dest_name, 'c')
-        # Go through all the pubsub queues
         self.remove_pubsub_child(self.message_queues[dest_name])
         del self.message_queues[dest_name]
         

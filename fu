@@ -5,6 +5,12 @@ import sys
 Bunch.connect()
 
 cmd = ' '.join( sys.argv[1:])
+
 src = _( cmd )
+
 res = src.execute()
-print res
+
+if isinstance( res, Bunch ):
+    print res.ls()
+else:
+    print res

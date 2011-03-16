@@ -1,0 +1,7 @@
+<div id="{{ bunch.xid() }}">
+<pre id="{{ bunch.xid() }}-editor" style="position: parent; width: 100%; height: 100%; margin: 0 auto;">{{ bunch.bunch }}</pre>
+<script src="/sys/javascripts/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("{{ bunch.xid() }}-editor");
+</script>
+</div>
