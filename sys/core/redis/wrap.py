@@ -155,9 +155,11 @@ class SetFu:
         self.system = system
 
     def add(self, item):
+        print "ADD CHILD: %s" % item
         get_redis(self.system).sadd(self.name, item)
 
     def remove(self, item):
+        print "RM CHILD: %s" % item
         get_redis(self.system).srem(self.name, item)
 
     def pop(self, item):

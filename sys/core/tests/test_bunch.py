@@ -3,10 +3,12 @@ import unittest, os
 from json import loads
 
 TEST_PATH="/tmp/unit-test"
+TEST_DB = 0
 
 class BunchTestCase(unittest.TestCase):
     def setUp(self):
-        Bunch.connect( "default" )
+        Bunch.connect( TEST_DB )
+        Bunch.resolve( TEST_PATH ).delete()
 
     def tearDown(self):
         Bunch.resolve( TEST_PATH ).delete()
@@ -27,7 +29,7 @@ class BunchTestCase(unittest.TestCase):
  
     def test_delete(self):
         bunch = Bunch.resolve( TEST_PATH, "test","Test")
-        self.assertTrue( bunch.kind == 'test' )
+        self.assertEquals( bunch.kind, 'test' )
         bunch.delete()
         ghost = Bunch.resolve( TEST_PATH )
         self.assertTrue( ghost.kind == GHOST )
@@ -38,12 +40,14 @@ class BunchTestCase(unittest.TestCase):
         root.attach( Bunch( TEST_PATH + "/child1","test","Children 1") )
         root.attach( Bunch( TEST_PATH + "/child2","test","Children 2") )
         self.assertTrue( len(root.children()) == 2 )
+        self.assertTrue( len(Bunch.resolve(TEST_PATH).children()) == 2 )
         root.detach( Bunch( TEST_PATH + "/child1","test","Not important") )
         self.assertTrue( len(root.children()) == 1 )
         root.delete()
         self.assertTrue( len(root.children()) == 0 )
         c1 = Bunch.resolve( TEST_PATH + "/child1" )
         self.assertEquals( c1.kind, GHOST )
+        c1.delete()
 
     def test_parent(self):
         one = Bunch.resolve( TEST_PATH )
@@ -54,10 +58,10 @@ class BunchTestCase(unittest.TestCase):
         two = Bunch.resolve( TEST_PATH + "/two" )
         self.assertEquals( one.path, two.parent().path )
         self.assertEquals( len( one.children() ), 1 )
-        
 
     def test_json(self):
         root = Bunch.resolve( TEST_PATH, "test", "Test" )
+        self.assertEquals( len(root.children()), 0 )
         child = Bunch.resolve( TEST_PATH + "/child1", "test", "Child 1" )
         self.assertEquals( len(root.children()), 1 )
         self.assertEquals( child.parent().path, root.path )
@@ -109,7 +113,7 @@ class BunchTestCase(unittest.TestCase):
         self.assertFalse( os.path.exists( test.fname() ) )
         
     def test_render(self):
-	Bunch.resolve( TEMPLATES + "test").delete("file")
+	Bunch.resolve( TEMPLATES + "test").delete(["redis","file"])
         test = Bunch.resolve( TEST_PATH + "/html", "test", "Test" )
         self.assertEquals( test.render(), test.bunch )
 	template = Bunch.resolve( TEMPLATES + "test")

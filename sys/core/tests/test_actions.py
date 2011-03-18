@@ -2,10 +2,11 @@ from bunch import Bunch, _, GHOST
 import unittest
 
 TEST_PATH="/tmp/unit-test"
+TEST_DB=0
 
 class ActionsTestCase(unittest.TestCase):
     def setUp(self):
-        Bunch.connect( "default" )
+        Bunch.connect( TEST_DB )
 
     def tearDown(self):
         Bunch.resolve( TEST_PATH ).delete()

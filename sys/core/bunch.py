@@ -1,13 +1,14 @@
-import redis
-from redis.wrap import *
 from simplejson import dumps, loads
 import random, string, os
 import magic, mimetypes
 from config import *
 from jinja2 import Environment, Template, FunctionLoader
+from store import RedisStore, FileStore
 
-""" Decorator: Limit recursuve call to 'level' and prevent circular refs """
 def recursive(f,none=""):
+    """ 
+    Decorator: Limit recursuve call to 'level' and prevent circular refs 
+    """
     def wrapped(*args,**kwds):
         _self = args[0]
         if 'hist' in kwds:
@@ -22,82 +23,6 @@ def recursive(f,none=""):
         else:
             return f(*args,**kwds)
     return wrapped
-
-
-class RedisStore:
-    """
-    Redis noSQL object storage
-    """
-    name = "default"
-
-    def __init__(self, context):
-        self.context = context
-        self.redis   = get_redis(context)
-
-    def __del__(self):
-        self.redis.flushdb()
-
-    def save(self, bunch):
-        self.redis[ bunch.path ] = bunch.bunch
-        self.redis[ bunch.path + "?kind"] = bunch.kind
- 
-    def load(self, bunch):
-        bunch.bunch = self.redis[ bunch.path ]
-        bunch.kind  = self.redis[ bunch.path + "?kind" ]
-
-    def delete(self, bunch):
-        self.redis.delete( bunch.path  )
-        self.redis.delete( bunch.path + "?kind" )
-        self.redis.delete( bunch.path + "?links" )
-
-    def exists(self, path):
-        return self.redis.exists( path )
-
-    def relations(self, bunch):
-        return get_set( bunch.path + "?links", self.context )
-
-class FileStore:
-    """
-    Redis noSQL object storage
-    """
-    name = "file"
-
-    def __init__(self, root):
-        self.root = root
-
-    def __del__(self):
-        pass
-
-    def save(self, bunch):
-        fn = bunch.fname()
-        dir = os.path.dirname(fn)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
-        f = open( fn, "w" )
-        f.write( bunch.bunch )
-        f.close()
- 
-    def load(self, bunch):
-        try:
-            fp = open( bunch.fname(), "r" )
-	    bunch.bunch = fp.read()
-            fp.close()
-            return True
-        except IOError:
-            return False
- 
-    def delete(self, bunch):
-        try:
-            os.remove( bunch.fname() )
-            return True
-        except OSError:
-            return False
-
-    def exists(self, path):
-        return os.path.exists( self.root + path )
-
-    def relations(self, bunch):
-        return None
 
 
 class Bunch:
@@ -135,7 +60,7 @@ class Bunch:
         offset = ''.join('    ' for i in xrange( ident ) ) + str(self)
         return offset + ''.join( '\n' + x.ls(level=level-1,ident=ident+1,hist=hist) for x in self.children()).rstrip('\n')
  
-    def save(self,storage="default"):
+    def save(self,storage="redis"):
         for store in self.store: 
             if store.name in storage:
                 store.save( self )
@@ -144,13 +69,14 @@ class Bunch:
         if p: p.save()
 
     @recursive
-    def delete(self, storage="default", hist=None):
+    def delete(self, storage="redis", hist=None):
 
         for ch in self.children():
             ch.delete( hist=hist )
 
         p = self.parent()
-        if p: p.detach( self )
+        if p: 
+            p.detach( self )
 
         for store in self.store:
             if store.name in storage:
@@ -166,15 +92,13 @@ class Bunch:
         
     def parent(self):
         if( self.path == SEPARATOR ) or (not self.path): return None
-        return Bunch.resolve( os.path.dirname( self.path ), GHOST, None )
+        return Bunch.resolve( os.path.dirname( self.path ) )
 
     def children(self):
         children = []
         for store in self.store: 
-            rels = store.relations(self) 
-            if rels:
-                for path in rels:
-                    children += [ Bunch.resolve( path, GHOST, None ) ]
+            for path in store.relations(self):
+                children += [ Bunch.resolve( path ) ]
 
         return children
 
@@ -183,15 +107,11 @@ class Bunch:
 
     def attach(self,bunch):
         for store in self.store:
-            rels = store.relations( self )
-            if rels:
-                rels.add( bunch.path )
+            store.relations( self ).add( bunch.path )
  
     def detach(self,bunch):
         for store in self.store: 
-            rels = store.relations( self )
-            if rels:
-                rels.remove( bunch.path )
+            store.relations( self ).remove( bunch.path )
 
     def json(self, depth=1):
         depth = self.level() + depth
@@ -258,8 +178,10 @@ class Bunch:
     """ Class methods """
  
     @classmethod
-    def connect(self,context="default"):
-        self.store = [ RedisStore( context ), FileStore( ROOT_DIR ) ]
+    def connect(self,db=0):
+        self.store = [ 
+		RedisStore( db ), FileStore( ROOT_DIR ) 
+	]
 
     @classmethod
     def disconnect(self):
@@ -276,23 +198,24 @@ class Bunch:
     @classmethod
     def resolve(self, path, kind=GHOST,bnc=None):
 
-        # If not a path, try to parse as command and put in history
+        # If not a path, try to parse as command and put in log
         if SEPARATOR != path[0]: 
 	    return self.parse( path=self.uniq( ROOT_SYS + "log" ).path ,kind=kind, cmd=path )
 
         # Root is hardcoded here
         if path == SEPARATOR: 
-            return Bunch( SEPARATOR, GHOST, "The root" )
+            bunch = Bunch( SEPARATOR, GHOST, "The root" )
+        else:
+            bunch = Bunch(path, kind, bnc)
 
-        bunch = Bunch(path, kind, bnc)
-
-        if self.exists( path ):
+        if Bunch.exists( path ):
             for store in self.store:
                 store.load( bunch )
         else:
-	    # Create new 'Ghost' object
+	    # Create new 'Ghost' object"
             p = bunch.parent()
-            if p: p.attach( bunch )
+            if p: 
+                p.attach( bunch )
             bunch.save()
 
         return bunch
@@ -303,7 +226,7 @@ class Bunch:
             path += SEPARATOR
         while True:
             uid = path + ''.join(random.choice(string.letters) for i in xrange(8))
-            if not self.exists( uid ):
+            if not Bunch.exists( uid ):
                 return Bunch.resolve( uid, kind, txt )
 
     @classmethod
