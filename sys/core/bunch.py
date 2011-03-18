@@ -3,17 +3,8 @@ from redis.wrap import *
 from simplejson import dumps, loads
 import random, string, os
 import magic, mimetypes
-
+from config import *
 from jinja2 import Environment, Template, FunctionLoader
-
-GHOST     = 'ghost'
-ROOT      = SEPARATOR = '/'
-ROOT_SYS  = ROOT + 'sys' + SEPARATOR
-LINKS     = ROOT_SYS + 'links'
-TEMPLATES = ROOT_SYS + 'templates' + SEPARATOR
-MEDIA     = ROOT_SYS + 'media' + SEPARATOR
-
-ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 """ Decorator: Limit recursuve call to 'level' and prevent circular refs """
 def recursive(f,none=""):
@@ -45,13 +36,12 @@ class Bunch:
     def __str__(self):
 
         bunch = self.bunch
-
-        if bunch:
-            if self.is_binary(): 
-                bunch = "[BINARY, %s]" % self.mimetype()
-            else:
-                if len(bunch)>60: bunch = bunch[:60] + ".."
+        if self.is_binary(): 
+            bunch = "[%s]" % self.mimetype()
+        else:
+            if bunch:
                 bunch = bunch.translate(None,'\r\n')
+                if len(bunch)>60: bunch = bunch[:60] + ".."
 
         return "%s.%s: %s" % ( self.name(), self.kind, bunch)
 
@@ -120,6 +110,9 @@ class Bunch:
         for path in get_set( LINKS + self.path, self.system ):
             children += [ Bunch.resolve( path ) ]
         return children
+
+    def children_count(self):
+        return len( self.children() )
 
     def attach(self,bunch):
         edges = get_set( LINKS + self.path, system=self.system )

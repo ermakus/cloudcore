@@ -1,0 +1,2 @@
+#!/bin/sh
+python /usr/lib/python2.6/cProfile.py -s cumulative fu stress > profile.log

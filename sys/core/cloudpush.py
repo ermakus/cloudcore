@@ -1,7 +1,8 @@
 from datetime import datetime
 from messagequeue import QueueError, MessageQueueManager
 from twisted.internet.protocol import Factory, Protocol
-from bunch import Bunch, _, GHOST, SEPARATOR, ROOT_SYS
+from config import *
+from bunch import Bunch, _
 from twisted.web import server, resource
 import traceback
 import stomper

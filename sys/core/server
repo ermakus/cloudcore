@@ -1,4 +1,5 @@
 #!/usr/bin/twistd -ny 
+from config import *
 from twisted.web import static, resource, server
 from twisted.application import internet, service
 from cloudpush import BunchFactory, BunchResource
@@ -8,14 +9,7 @@ from orbited import config
 
 import sys,os
 
-BASEDIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR='/var/log/cloudpub'
-INTERFACE = "0.0.0.0"
-STATIC_PORT = 8000
-STOMP_PORT  = 9999
-
 config.map["[access]"]={(INTERFACE, STOMP_PORT):"*",("localhost",STOMP_PORT):"*",("cloudpub.us",STOMP_PORT):"*"}
-sys.path.append( BASEDIR )
 
 application = service.Application('cloudpub')
 serviceCollection = service.IServiceCollection(application)

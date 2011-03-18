@@ -127,7 +127,6 @@ class BunchTestCase(unittest.TestCase):
         ls = _( "ls %s" % empty.path )
         self.assertEquals( ls.kind, "ls" )
         self.assertEquals( ls.bunch, empty.path )
-
         res = ls.execute()
         self.assertEquals( res, empty.ls() )
 
