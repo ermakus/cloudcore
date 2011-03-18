@@ -41,7 +41,9 @@ class RedisStore:
         pass
 
     def save(self, bunch):
-        self.redis.pipeline().set( bunch.path, bunch.bunch).set(  bunch.path + "?kind", bunch.kind).execute()
+        pipe = self.redis.pipeline()
+        pipe.set( bunch.path, bunch.bunch).set(  bunch.path + "?kind", bunch.kind)
+        pipe.execute()
  
     def load(self, bunch):
         bunch.bunch = self.redis[ bunch.path ]

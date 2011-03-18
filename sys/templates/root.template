@@ -1,4 +1,0 @@
-<div id="{{ bunch.xid() }}>
-<h1>The Root</h1>
-{% autoescape false %}{% for child in bunch.children() %}{{ child.render( template=template, level=level ) }}{% endfor %}{% endautoescape %}
-</div>

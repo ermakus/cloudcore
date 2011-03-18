@@ -44,7 +44,7 @@ class Bunch:
                 bunch = bunch.translate(None,'\r\n')
                 if len(bunch)>60: bunch = bunch[:60] + ".."
 
-        return "%s.%s: %s" % ( self.name(), self.kind, bunch)
+        return "%s: %s" % ( self.name(), bunch)
 
     def xid(self):
         return self.path.replace(SEPARATOR,'_')
@@ -53,7 +53,7 @@ class Bunch:
         return os.path.basename( self.path )
 
     def fname(self):
-        return ROOT_DIR + self.path + "." + ( self.kind or GHOST )
+        return ROOT_DIR + self.path
 
     @recursive
     def ls(self, level=1, ident=0, hist=None):
@@ -129,7 +129,7 @@ class Bunch:
     def render(self, level=1, hist=None, template=None):
         if template is None: template = self.kind
         def load(kind):
-            temp = Bunch.resolve( TEMPLATES + kind, "template", "{% autoescape false %}{{ bunch.bunch }}{% endautoescape %}" )
+            temp = Bunch.resolve( TEMPLATES + kind + ".template", "template", "{% autoescape false %}{{ bunch.bunch }}{% endautoescape %}" )
             return temp.bunch
 
         env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
@@ -148,7 +148,7 @@ class Bunch:
    
     def mimetype(self):
         if self.mime: return self.mime
-        self.mime, encoding = mimetypes.guess_type( self.name() + '.' + self.kind )        
+        self.mime, encoding = mimetypes.guess_type( self.name() )        
         if not self.mime:
             if self.bunch:
                 mime = magic.Magic(mime=True)
@@ -239,7 +239,9 @@ class Bunch:
     def parse(self, path, kind=GHOST, cmd="nop"):
         parts = cmd.strip().split()
         cmd = parts[0]
-        bunch = Bunch(path,cmd,' '.join(parts[1:]))
+        bunch = Bunch.resolve(path)
+        bunch.kind = cmd
+        bunch.bunch =' '.join(parts[1:]) 
         for p in parts[1:]:
             if p[0] == SEPARATOR:
                 bunch.attach( Bunch.resolve( p ) )

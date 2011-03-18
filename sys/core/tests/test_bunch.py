@@ -2,7 +2,7 @@ from bunch import Bunch, GHOST, TEMPLATES, SEPARATOR, ROOT_DIR, _
 import unittest, os
 from json import loads
 
-TEST_PATH="/tmp/unit-test"
+TEST_PATH="/sys/test"
 TEST_DB = 0
 
 class BunchTestCase(unittest.TestCase):
@@ -12,6 +12,7 @@ class BunchTestCase(unittest.TestCase):
 
     def tearDown(self):
         Bunch.resolve( TEST_PATH ).delete()
+        self.assertEquals( len( Bunch.store[0].redis.keys( TEST_PATH + "*" ) ), 0 )
         Bunch.disconnect()
 
     def test_redis(self):
@@ -51,7 +52,7 @@ class BunchTestCase(unittest.TestCase):
 
     def test_parent(self):
         one = Bunch.resolve( TEST_PATH )
-        self.assertEquals( one.parent().path , "/tmp" )
+        self.assertEquals( one.parent().path , "/sys" )
         self.assertEquals( one.parent().parent().path, "/" )
         self.assertEquals( one.parent().parent().kind, GHOST )
         self.assertEquals( one.parent().parent().parent(), None )
@@ -94,10 +95,10 @@ class BunchTestCase(unittest.TestCase):
         self.assertEquals( Bunch.resolve('/').xid(), '_' )
 
     def test_save(self):
-        test = Bunch.resolve( TEST_PATH + "/test", "txt", "Test" )
+        test = Bunch.resolve( TEST_PATH + "/test.txt", "txt", "Test" )
         self.assertEquals( test.bunch, "Test" )
         self.assertEquals( test.fname(), ROOT_DIR + TEST_PATH + '/test.txt' )
-        test.save("file")
+        test.save(["redis","file"])
 
         f = open( test.fname(),"r" )
         self.assertEquals( f.read(), "Test" )
@@ -109,23 +110,22 @@ class BunchTestCase(unittest.TestCase):
         test2 = Bunch.resolve( test.path )
         self.assertEquals( test2.bunch, "Test2")
 
-        test.delete("file")
+        test.delete(["redis","file"])
         self.assertFalse( os.path.exists( test.fname() ) )
         
     def test_render(self):
-	Bunch.resolve( TEMPLATES + "test").delete(["redis","file"])
+	Bunch.resolve( TEMPLATES + "test.template" ).delete(["redis","file"])
         test = Bunch.resolve( TEST_PATH + "/html", "test", "Test" )
         self.assertEquals( test.render(), test.bunch )
-	template = Bunch.resolve( TEMPLATES + "test")
+	template = Bunch.resolve( TEMPLATES + "test.template" )
         template.bunch = "{{ bunch.kind }}"
-        template.save("file")
+        template.save(["redis","file"])
         self.assertEquals( test.render(), test.kind )
-        template.delete("file")
-
+        template.delete(["redis","file"])
 
     def test_ls(self):
         empty = _( TEST_PATH + "/empty", "test", "Content" )
-        self.assertEquals( empty.ls(), empty.name() + ".test: Content" ) 
+        self.assertEquals( empty.ls(), empty.name() + ": Content" ) 
 
     def test_execute(self):
         empty = _( TEST_PATH + "/empty" )
@@ -161,3 +161,14 @@ class BunchTestCase(unittest.TestCase):
         origin.notify( "Nope" )
         self.assertEquals( gotcha[1], "Event" )
 
+    def test_parse(self):
+        cmd = Bunch.parse( TEST_PATH, GHOST, "cd /tmp")
+        self.assertEquals( cmd.path, TEST_PATH )
+        self.assertEquals( cmd.kind, "cd" )
+        self.assertEquals( cmd.bunch, "/tmp" )
+        self.assertEquals( cmd.children()[0].path, "/tmp" )
+
+    def test_render_cmd(self):
+        cmd = _( "render " + TEST_PATH )
+        self.assertEquals( cmd.execute(), _( TEST_PATH ).render() )
+ 

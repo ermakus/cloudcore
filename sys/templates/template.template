@@ -1,9 +1,0 @@
-<style>
-  .template { background-color: #AAAAAA; width: 100%; }
-  .template textarea { width: 90%; padding: 5%; }
-</style>
-<div id="{{ bunch.xid() }}" class="template">
-<b>Template for: {{ bunch.name() }}</b>
-<textarea id="{{ bunch.xid() }}-editor" >{{ bunch.bunch }}</textarea>
-{% for child in bunch.children() %}{{ child.render() }}{% endfor %}
-</div>

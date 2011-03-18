@@ -1,11 +1,9 @@
 <li id="{{ bunch.xid() }}" class="menu">
 <a href="#">
-{% if bunch.kind == 'dir' %}
+{% if bunch.children_count() %}
 <span class="abs toggle_arrow"></span>
-{{ bunch.name() }}
-{% else %}
-{{ bunch.name() }}.{{ bunch.kind }}
 {% endif %}
+{{ bunch.name() }}
 </a>
 {% if bunch.children_count() %}
 <ul>{% autoescape false %}{% for child in bunch.children() %}{{ child.render( template=template, level=level ) }}{% endfor %}{% endautoescape %}</ul>

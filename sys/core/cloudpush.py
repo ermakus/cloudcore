@@ -77,9 +77,9 @@ class BunchResourceLeaf(resource.Resource):
 	level = 1
         if 'level' in request.args: level = int(request.args['level'][0])
        	if path == "" or path == SEPARATOR and template is None:
-            bunch = Bunch.resolve( ROOT_SYS + "index", "html", "No index file" )
+            bunch = Bunch.resolve( ROOT_SYS + "index.html", "html", "No index file" )
         else:
-            bunch = Bunch.resolve( path, kind[1:] )
+            bunch = Bunch.resolve( request.path, kind[1:] )
 	print " << ", bunch
         request.setHeader('Content-Type', bunch.mimetype() )
         if bunch.is_binary(): return bunch.bunch
