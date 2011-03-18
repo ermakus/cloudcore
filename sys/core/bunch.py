@@ -69,7 +69,6 @@ class FileStore:
         pass
 
     def save(self, bunch):
-        return # stub
         fn = bunch.fname()
         dir = os.path.dirname(fn)
         if not os.path.exists(dir):
@@ -83,20 +82,22 @@ class FileStore:
             fp = open( bunch.fname(), "r" )
 	    bunch.bunch = fp.read()
             fp.close()
+            return True
         except IOError:
-            pass
+            return False
  
     def delete(self, bunch):
         try:
             os.remove( bunch.fname() )
+            return True
         except OSError:
-            pass
+            return False
 
     def exists(self, path):
-        return self.redis.exists( path )
+        return os.path.exists( self.root + path )
 
     def relations(self, bunch):
-        return get_set( bunch.path + "?links", self.context )
+        return None
 
 
 class Bunch:
@@ -127,7 +128,7 @@ class Bunch:
         return os.path.basename( self.path )
 
     def fname(self):
-        return ROOT_DIR + self.path + "." + self.kind
+        return ROOT_DIR + self.path + "." + ( self.kind or GHOST )
 
     @recursive
     def ls(self, level=1, ident=0, hist=None):
@@ -165,13 +166,15 @@ class Bunch:
         
     def parent(self):
         if( self.path == SEPARATOR ) or (not self.path): return None
-        return Bunch.resolve( os.path.dirname( self.path ) )
+        return Bunch.resolve( os.path.dirname( self.path ), GHOST, None )
 
     def children(self):
         children = []
         for store in self.store: 
-            for path in store.relations(self):
-                children += [ Bunch.resolve( path ) ]
+            rels = store.relations(self) 
+            if rels:
+                for path in rels:
+                    children += [ Bunch.resolve( path, GHOST, None ) ]
 
         return children
 
@@ -179,12 +182,16 @@ class Bunch:
         return len( self.children() )
 
     def attach(self,bunch):
-        for store in self.store: 
-            store.relations(self).add( bunch.path )
+        for store in self.store:
+            rels = store.relations( self )
+            if rels:
+                rels.add( bunch.path )
  
     def detach(self,bunch):
         for store in self.store: 
-            store.relations(self).remove( bunch.path )
+            rels = store.relations( self )
+            if rels:
+                rels.remove( bunch.path )
 
     def json(self, depth=1):
         depth = self.level() + depth
