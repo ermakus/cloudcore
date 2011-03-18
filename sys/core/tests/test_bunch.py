@@ -13,7 +13,7 @@ class BunchTestCase(unittest.TestCase):
         Bunch.disconnect()
 
     def test_redis(self):
-        self.assertTrue( Bunch.db != None )
+        self.assertTrue( Bunch.store != None )
 
     def test_resolve(self):
         bunch = Bunch.resolve( TEST_PATH, "test","Test")
@@ -49,7 +49,7 @@ class BunchTestCase(unittest.TestCase):
         one = Bunch.resolve( TEST_PATH )
         self.assertEquals( one.parent().path , "/tmp" )
         self.assertEquals( one.parent().parent().path, "/" )
-        self.assertEquals( one.parent().parent().kind, "root" )
+        self.assertEquals( one.parent().parent().kind, GHOST )
         self.assertEquals( one.parent().parent().parent(), None )
         two = Bunch.resolve( TEST_PATH + "/two" )
         self.assertEquals( one.path, two.parent().path )
@@ -91,6 +91,7 @@ class BunchTestCase(unittest.TestCase):
 
     def test_save(self):
         test = Bunch.resolve( TEST_PATH + "/test", "txt", "Test" )
+        self.assertEquals( test.bunch, "Test" )
         self.assertEquals( test.fname(), ROOT_DIR + TEST_PATH + '/test.txt' )
         test.save("file")
 
@@ -136,4 +137,23 @@ class BunchTestCase(unittest.TestCase):
         self.assertFalse( txt.is_binary() )
         bin = _( TEST_PATH + "/bin", "test", "BIN\01\02\03\04" )
         self.assertTrue( bin.is_binary() )
+
+    def test_subscribe(self):
+
+        gotcha = [None,None]
+
+        def handler(who, event):
+            gotcha[0] = who
+            gotcha[1] = event
+
+        origin = _( TEST_PATH + "/origin" )
+        origin.subscribe( handler )
+        origin.notify( "Event" )
+
+        self.assertEquals( gotcha[0], origin )
+        self.assertEquals( gotcha[1], "Event" )
+
+        origin.unsubscribe( handler )
+        origin.notify( "Nope" )
+        self.assertEquals( gotcha[1], "Event" )
 

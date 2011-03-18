@@ -27,6 +27,12 @@ def rm( rm, avatar ):
     child.delete()
     return  """<delete id="%s"/>""" % child.xid()
 
+def subscribe( cmd, avatar ):
+    return """OK"""
+
+def unsubscribe( cmd, avatar ):
+    return """OK"""
+
 def alert( send, avatar ):
     return "<script>alert('%s');</script>" % send.bunch
 

@@ -48,7 +48,7 @@ class BunchFactory(Factory):
 
     def report(self, msg):
         if self.verbose:
-            print "[%s] StompFactory: %s" % (datetime.now(), msg)
+            print "[%s] BunchFactory: %s" % (datetime.now(), msg)
 
     def disconnected(self, proto):
         self.mqm.unsubscribe_all_queues(proto)

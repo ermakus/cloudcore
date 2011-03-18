@@ -23,7 +23,81 @@ def recursive(f,none=""):
             return f(*args,**kwds)
     return wrapped
 
-"""  Bunch! The Mega Object """
+
+class RedisStore:
+    """
+    Redis noSQL object storage
+    """
+    name = "default"
+
+    def __init__(self, context):
+        self.context = context
+        self.redis   = get_redis(context)
+
+    def __del__(self):
+        self.redis.flushdb()
+
+    def save(self, bunch):
+        self.redis[ bunch.path ] = bunch.bunch
+        self.redis[ bunch.path + "?kind"] = bunch.kind
+ 
+    def load(self, bunch):
+        bunch.bunch = self.redis[ bunch.path ]
+        bunch.kind  = self.redis[ bunch.path + "?kind" ]
+
+    def delete(self, bunch):
+        self.redis.delete( bunch.path  )
+        self.redis.delete( bunch.path + "?kind" )
+        self.redis.delete( bunch.path + "?links" )
+
+    def exists(self, path):
+        return self.redis.exists( path )
+
+    def relations(self, bunch):
+        return get_set( bunch.path + "?links", self.context )
+
+class FileStore:
+    """
+    Redis noSQL object storage
+    """
+    name = "file"
+
+    def __init__(self, root):
+        self.root = root
+
+    def __del__(self):
+        pass
+
+    def save(self, bunch):
+        return # stub
+        fn = bunch.fname()
+        dir = os.path.dirname(fn)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        f = open( fn, "w" )
+        f.write( bunch.bunch )
+        f.close()
+ 
+    def load(self, bunch):
+        try:
+            fp = open( bunch.fname(), "r" )
+	    bunch.bunch = fp.read()
+            fp.close()
+        except IOError:
+            pass
+ 
+    def delete(self, bunch):
+        try:
+            os.remove( bunch.fname() )
+        except OSError:
+            pass
+
+    def exists(self, path):
+        return self.redis.exists( path )
+
+    def relations(self, bunch):
+        return get_set( bunch.path + "?links", self.context )
+
 
 class Bunch:
 
@@ -32,6 +106,7 @@ class Bunch:
         self.kind = kind
         self.bunch = bunch
         self.mime = None
+        self.handlers = []
 
     def __str__(self):
 
@@ -60,16 +135,9 @@ class Bunch:
         return offset + ''.join( '\n' + x.ls(level=level-1,ident=ident+1,hist=hist) for x in self.children()).rstrip('\n')
  
     def save(self,storage="default"):
-        self.db[ self.path ] = self.bunch
-        self.db[ self.path + "?kind"] = self.kind
-        if storage == "file":
-            fn = self.fname()
-            dir = os.path.dirname(fn)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-            f = open( fn, "w" )
-            f.write( self.bunch )
-            f.close()
+        for store in self.store: 
+            if store.name in storage:
+                store.save( self )
 
         p = self.parent()
         if p: p.save()
@@ -83,15 +151,9 @@ class Bunch:
         p = self.parent()
         if p: p.detach( self )
 
-        self.db.delete( self.path  )
-        self.db.delete( self.path + "?kind" )
-        self.db.delete( LINKS + self.path )
-
-        if storage == "file":
-            try:
-                os.remove( self.fname() )
-            except OSError:
-                pass
+        for store in self.store:
+            if store.name in storage:
+                store.delete( self )
 
     def level(self):
         me = self.parent()
@@ -107,21 +169,22 @@ class Bunch:
 
     def children(self):
         children = []
-        for path in get_set( LINKS + self.path, self.system ):
-            children += [ Bunch.resolve( path ) ]
+        for store in self.store: 
+            for path in store.relations(self):
+                children += [ Bunch.resolve( path ) ]
+
         return children
 
     def children_count(self):
         return len( self.children() )
 
     def attach(self,bunch):
-        edges = get_set( LINKS + self.path, system=self.system )
-        edges.add( bunch.path )
+        for store in self.store: 
+            store.relations(self).add( bunch.path )
  
     def detach(self,bunch):
-        edges = get_set( LINKS + self.path, system=self.system )
-        if bunch.path in edges:
-            edges.remove( bunch.path )
+        for store in self.store: 
+            store.relations(self).remove( bunch.path )
 
     def json(self, depth=1):
         depth = self.level() + depth
@@ -158,10 +221,13 @@ class Bunch:
    
     def mimetype(self):
         if self.mime: return self.mime
-        self.mime, encoding = mimetypes.guess_type( self.name() + '.' + self.kind )
+        self.mime, encoding = mimetypes.guess_type( self.name() + '.' + self.kind )        
         if not self.mime:
-            mime = magic.Magic(mime=True)
-            self.mime = mime.from_buffer( self.bunch )
+            if self.bunch:
+                mime = magic.Magic(mime=True)
+                self.mime = mime.from_buffer( self.bunch )
+            else:
+                self.mime = "text/plain"
         return self.mime
 
     def is_binary(self):
@@ -170,25 +236,35 @@ class Bunch:
         if 'javascript' in self.mimetype():
             return False
 
-
         return True
+
+    def subscribe(self, handler):
+        self.handlers += [handler]
+
+    def unsubscribe(self, handler):
+        self.handlers.remove(handler)
+
+    def notify( self, event ):
+        for h in self.handlers:
+            h( self, event ) 
 
     """ Class methods """
  
     @classmethod
-    def connect(self,system="default"):
-        self.system = system
-        self.db = get_redis(system)
+    def connect(self,context="default"):
+        self.store = [ RedisStore( context ), FileStore( ROOT_DIR ) ]
 
     @classmethod
     def disconnect(self):
-        if( self.db ):
-            self.db.flushdb()
-            self.db = None
+        for store in self.store: del store
+        self.store = [] 
 
     @classmethod
     def exists(self, path):
-        return self.db.exists( path )
+        for store in self.store:
+            if store.exists( path ):
+                return True
+        return False
 
     @classmethod
     def resolve(self, path, kind=GHOST,bnc=None):
@@ -199,25 +275,19 @@ class Bunch:
 
         # Root is hardcoded here
         if path == SEPARATOR: 
-            return Bunch( SEPARATOR, "root", "The Root")
+            return Bunch( SEPARATOR, GHOST, "The root" )
 
-        # Check in redis or load from file
-        if self.db.exists( path ):
-            bunch = Bunch(path, self.db[ path + "?kind" ], self.db[ path ])
+        bunch = Bunch(path, kind, bnc)
+
+        if self.exists( path ):
+            for store in self.store:
+                store.load( bunch )
         else:
 	    # Create new 'Ghost' object
-            bunch = Bunch(path, kind, bnc)
             p = bunch.parent()
             if p: p.attach( bunch )
             bunch.save()
 
-        try:
-            fp = open( bunch.fname(), "r" )
-	    bunch.bunch = fp.read()
-            fp.close()
-        except IOError:
-            pass
- 
         return bunch
 
     @classmethod
@@ -226,7 +296,7 @@ class Bunch:
             path += SEPARATOR
         while True:
             uid = path + ''.join(random.choice(string.letters) for i in xrange(8))
-            if not self.db.exists( uid ):
+            if not self.exists( uid ):
                 return Bunch.resolve( uid, kind, txt )
 
     @classmethod
