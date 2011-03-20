@@ -1,5 +1,6 @@
 import redis
 import os
+from config import ROOT_DIR
 
 class RedisSet:
     """
@@ -102,6 +103,9 @@ class FileStore:
 
     def relations(self, bunch):
         class NopeSet:
+            def __init__(self,path):
+                self.path = path
+
             def add(self, item):
                 pass
 
@@ -109,8 +113,9 @@ class FileStore:
                 pass
 
             def __iter__(self):
-                return iter([])
+                if os.path.isdir( self.path ):
+                    for filename in os.listdir( self.path ):
+                        if filename[0] == '.': continue
+                        yield os.path.join(self.path, filename)[len(ROOT_DIR):]
 
-        return NopeSet()
-
-
+        return NopeSet( self.root + bunch.path )

@@ -171,11 +171,11 @@ class BunchTestCase(unittest.TestCase):
         self.assertEquals( gotcha[1], "Event" )
 
     def test_parse(self):
-        cmd = Bunch.parse( TEST_PATH, GHOST, "cd /tmp")
+        cmd = Bunch.parse( TEST_PATH, GHOST, "cd " + TEST_PATH )
         self.assertEquals( cmd.path, TEST_PATH )
         self.assertEquals( cmd.kind, "cd" )
-        self.assertEquals( cmd.bunch, "/tmp" )
-        self.assertEquals( cmd.children()[0].path, "/tmp" )
+        self.assertEquals( cmd.bunch, TEST_PATH )
+        self.assertEquals( cmd.children()[0].path, TEST_PATH )
 
     def test_render_cmd(self):
         cmd = _( "render " + TEST_PATH )

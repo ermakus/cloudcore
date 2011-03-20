@@ -61,7 +61,9 @@ class Bunch:
     @recursive
     def ls(self, level=1, ident=0, hist=None):
         offset = ''.join('    ' for i in xrange( ident ) ) + str(self)
-        return offset + ''.join( '\n' + x.ls(level=level-1,ident=ident+1,hist=hist) for x in self.children()).rstrip('\n')
+        if level > 1:
+            offset += ''.join( '\n' + x.ls(level=level-1,ident=ident+1,hist=hist) for x in self.children()).rstrip('\n')
+        return offset
  
     def save(self,storage="redis"):
         for store in self.store: 
@@ -103,11 +105,10 @@ class Bunch:
 
     def children(self):
         children = []
-        for store in self.store: 
-            for path in store.relations(self):
-                children += [ Bunch.resolve( path ) ]
-
-        return children
+        for store in self.store:
+            children.extend( x for x in store.relations(self) if x not in children )
+        children.sort()
+        return [Bunch.resolve( path ) for path in children]
 
     def children_count(self):
         return len( self.children() )
