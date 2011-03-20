@@ -3,7 +3,7 @@
 {% if bunch.children_count() %}
 <span class="abs toggle_arrow"></span>
 {% endif %}
-{{ bunch.name() }}
+{% if bunch.path == "/" %}Home{% else %}{{ bunch.name() }}{% endif %}
 </a>
 {% if bunch.children_count() %}
 <ul>{% autoescape false %}{% for child in bunch.children() %}{{ child.render( template=template, level=level ) }}{% endfor %}{% endautoescape %}</ul>

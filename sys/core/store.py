@@ -46,8 +46,8 @@ class RedisStore:
         pipe.execute()
  
     def load(self, bunch):
-        bunch.bunch = self.redis[ bunch.path ]
-        bunch.kind  = self.redis[ bunch.path + "?kind" ]
+        bunch.bunch = self.redis[ bunch.path ] or bunch.bunch
+        bunch.kind  = self.redis[ bunch.path + "?kind" ] or bunch.kind
 
     def delete(self, bunch):
         self.redis.delete( bunch.path  )
@@ -98,7 +98,7 @@ class FileStore:
             return False
 
     def exists(self, path):
-        return False #os.path.exists( self.root + path )
+        return os.path.isfile( self.root + path )
 
     def relations(self, bunch):
         class NopeSet:

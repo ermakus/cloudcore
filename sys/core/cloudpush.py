@@ -80,8 +80,10 @@ class BunchResourceLeaf(resource.Resource):
             bunch = Bunch.resolve( ROOT_SYS + "index.html", "html", "No index file" )
         else:
             bunch = Bunch.resolve( request.path, kind[1:] )
-	print " << ", bunch
         request.setHeader('Content-Type', bunch.mimetype() )
-        if bunch.is_binary(): return bunch.bunch
-        return str( bunch.render(level=level, template=template) )
-
+        if bunch.is_binary(): 
+   	    print " << BIN ", bunch
+            return bunch.bunch
+        res = str( bunch.render(level=level, template=template) )
+	print " << TXT ", res
+        return res

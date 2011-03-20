@@ -25,6 +25,9 @@ def recursive(f,none=""):
     return wrapped
 
 
+CACHE = {'#':'Dummy Cache'}
+#CACHE = False
+
 class Bunch:
 
     def __init__(self,path="/tmp",kind=GHOST,bunch=None):
@@ -66,11 +69,15 @@ class Bunch:
                 store.save( self )
 
         p = self.parent()
-        if p: p.save()
+        if p:
+            p.attach( self )
+            p.save()
 
     @recursive
     def delete(self, storage="redis", hist=None):
 
+        if CACHE and self.path in CACHE: del CACHE[ self.path ]
+ 
         for ch in self.children():
             ch.delete( hist=hist )
 
@@ -197,6 +204,7 @@ class Bunch:
 
     @classmethod
     def resolve(self, path, kind=GHOST,bnc=None):
+        if CACHE and path in CACHE: return CACHE[ path ]
 
         # If not a path, try to parse as command and put in log
         if SEPARATOR != path[0]: 
@@ -206,17 +214,16 @@ class Bunch:
         if path == SEPARATOR: 
             bunch = Bunch( SEPARATOR, GHOST, "The root" )
         else:
-            bunch = Bunch(path, kind, bnc)
+            bunch = Bunch( path, kind, bnc )
 
         if Bunch.exists( path ):
             for store in self.store:
-                store.load( bunch )
+                if store.load( bunch ) and store.name == "file":
+		    bunch.save("redis")
         else:
-	    # Create new 'Ghost' object"
-            p = bunch.parent()
-            if p: 
-                p.attach( bunch )
             bunch.save()
+
+        if CACHE: CACHE[ bunch.path ] = bunch
 
         return bunch
 
@@ -246,6 +253,7 @@ class Bunch:
             if p[0] == SEPARATOR:
                 bunch.attach( Bunch.resolve( p ) )
         bunch.save()
+        if CACHE: CACHE[ bunch.path ] = bunch
         return bunch
 
 _ = Bunch.resolve

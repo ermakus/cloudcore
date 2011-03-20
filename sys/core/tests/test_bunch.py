@@ -1,4 +1,4 @@
-from bunch import Bunch, GHOST, TEMPLATES, SEPARATOR, ROOT_DIR, _
+from bunch import Bunch, GHOST, TEMPLATES, SEPARATOR, ROOT_DIR, ROOT_SYS, CACHE, _
 import unittest, os
 from json import loads
 
@@ -20,13 +20,13 @@ class BunchTestCase(unittest.TestCase):
 
     def test_resolve(self):
         bunch = Bunch.resolve( TEST_PATH, "test","Test")
-        self.assertTrue( bunch.path == TEST_PATH )
-        self.assertTrue( bunch.kind == "test" )
-        self.assertTrue( bunch.bunch == "Test" )
+        self.assertEquals( bunch.path, TEST_PATH )
+        self.assertEquals( bunch.kind, "test" )
+        self.assertEquals( bunch.bunch, "Test" )
         bunch = Bunch.resolve( TEST_PATH )
-        self.assertTrue( bunch.path == TEST_PATH )
-        self.assertTrue( bunch.kind == "test" )
-        self.assertTrue( bunch.bunch == "Test" )
+        self.assertEquals( bunch.path, TEST_PATH )
+        self.assertEquals( bunch.kind, "test" )
+        self.assertEquals( bunch.bunch, "Test" )
  
     def test_delete(self):
         bunch = Bunch.resolve( TEST_PATH, "test","Test")
@@ -96,8 +96,8 @@ class BunchTestCase(unittest.TestCase):
 
     def test_save(self):
         test = Bunch.resolve( TEST_PATH + "/test.txt", "txt", "Test" )
-        self.assertEquals( test.bunch, "Test" )
         self.assertEquals( test.fname(), ROOT_DIR + TEST_PATH + '/test.txt' )
+        test.bunch = "Test"
         test.save(["redis","file"])
 
         f = open( test.fname(),"r" )
@@ -107,11 +107,16 @@ class BunchTestCase(unittest.TestCase):
         f = open( test.fname(),"w" )
         f.write("Test2")
         f.close()
+
+        if CACHE: del CACHE[ test.path ]
+
         test2 = Bunch.resolve( test.path )
         self.assertEquals( test2.bunch, "Test2")
 
         test.delete(["redis","file"])
         self.assertFalse( os.path.exists( test.fname() ) )
+        test2 = Bunch.resolve( test.path, GHOST )
+        self.assertEquals( test2.kind, GHOST )
         
     def test_render(self):
 	Bunch.resolve( TEMPLATES + "test.template" ).delete(["redis","file"])
@@ -126,6 +131,10 @@ class BunchTestCase(unittest.TestCase):
     def test_ls(self):
         empty = _( TEST_PATH + "/empty", "test", "Content" )
         self.assertEquals( empty.ls(), empty.name() + ": Content" ) 
+        _( ROOT_SYS + "templates/menu.template")
+        listing = _( ROOT_SYS + "templates").ls(level=2)
+        self.assertTrue( "menu.template" in listing  )
+        
 
     def test_execute(self):
         empty = _( TEST_PATH + "/empty" )
@@ -171,4 +180,5 @@ class BunchTestCase(unittest.TestCase):
     def test_render_cmd(self):
         cmd = _( "render " + TEST_PATH )
         self.assertEquals( cmd.execute(), _( TEST_PATH ).render() )
- 
+
+               
