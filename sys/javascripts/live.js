@@ -82,8 +82,8 @@
 	}
 
         $( function() {
-		var root = $("#main_content").bunch("/","render -l 1 -t root /");
-		$("#sidebar_menu").load("/?template=menu&level=5", function() {
+		var root = $("#main_content").bunch("/tmp","render -l 1 -t root /");
+		$("#sidebar_menu").load("/tmp?template=menu&level=4", function() {
 			$('body').delegate('.menu','click', function(event) {
 				var path = id2p( $(this).attr("id") );
 				root.send( "render -l 1 -t edit " + path );

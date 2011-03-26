@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from datetime import datetime
 from messagequeue import QueueError, MessageQueueManager
 from twisted.internet.protocol import Factory, Protocol
@@ -23,7 +24,7 @@ class BunchProtocol(Protocol):
         result = self.factory.mqm.send_message(self, path, res )
 
     def send(self, body):
-        self.transport.write(body)
+        self.transport.write(body.encode("utf-8"))
 
     def close(self, *args):
         self.transport.loseConnection()
@@ -82,8 +83,7 @@ class BunchResourceLeaf(resource.Resource):
             bunch = Bunch.resolve( request.path, kind[1:] )
         request.setHeader('Content-Type', bunch.mimetype() )
         if bunch.is_binary(): 
-   	    print " << BIN ", bunch
+   	    print " << BINARY ", bunch
             return bunch.bunch
-        res = str( bunch.render(level=level, template=template) )
-	print " << TXT ", res
-        return res
+	print " << RENDER ", bunch.path, bunch.mimetype()
+        return bunch.render(level=level, template=template).encode("utf-8")

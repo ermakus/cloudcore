@@ -141,9 +141,7 @@ class Bunch:
             return temp.bunch
 
         env = Environment(autoescape=True, loader=FunctionLoader( load ), extensions=['jinja2.ext.autoescape'])
-        result = env.get_template( template ).render( bunch=self, level=level-1, template=template )
-
-        return str(result)
+        return env.get_template( template ).render( bunch=self, level=level-1, template=template )
 
     def execute(self,avatar=None):
 

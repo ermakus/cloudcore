@@ -18,7 +18,7 @@ def escape(s):
     """
     if hasattr(s, '__html__'):
         return s.__html__()
-    return Markup(unicode(s)
+    return Markup(unicode(s,"utf-8")
         .replace('&', '&amp;')
         .replace('>', '&gt;')
         .replace('<', '&lt;')
